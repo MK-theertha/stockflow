@@ -1,0 +1,31 @@
+{
+  "name": "stockflow",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=20.6"
+  },
+  "workspaces": [
+    "client",
+    "server",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,client -c blue,magenta \"npm run dev -w server\" \"npm run dev -w client\"",
+    "build": "npm run build -w client",
+    "test": "npm test -w server",
+    "start": "npm start -w server",
+    "lint": "eslint client/src server/src server/scripts shared --ext .js,.jsx,.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:assign-owner": "npm run db:assign-owner -w server --"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-unused-imports": "^3.2.0",
+    "prettier": "^3.3.3"
+  }
+}

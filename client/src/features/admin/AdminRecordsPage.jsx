@@ -5,6 +5,7 @@ import DataTable from '@/components/common/DataTable';
 import PageHeader from '@/components/common/PageHeader';
 import { approvalStatus, PAYMENT_STATUS } from '@/features/sales/status';
 import { useApi } from '@/hooks/useApi';
+import { usePagedApi } from '@/hooks/usePagedApi';
 import { formatDate, formatMoney } from '@/lib/format';
 
 // Read-only views of every shop's records. Admins call the same /api/user
@@ -22,6 +23,7 @@ const RESOURCES = {
   },
   purchases: {
     title: 'All purchases',
+    paged: true,
     endpoint: '/api/user/purchases',
     columns: [
       { label: 'Purchase no.', render: (p) => p.purchase_no, search: (p) => p.purchase_no },
@@ -34,6 +36,7 @@ const RESOURCES = {
   },
   invoices: {
     title: 'All invoices',
+    paged: true,
     endpoint: '/api/user/payment',
     columns: [
       {
@@ -76,8 +79,10 @@ const RESOURCES = {
 };
 
 export default function AdminRecordsPage({ resource }) {
-  const { title, endpoint, columns } = RESOURCES[resource];
-  const { data, loading, error } = useApi(endpoint);
+  const { title, endpoint, columns, paged } = RESOURCES[resource];
+  // Purchases and invoices can be huge, so they load a page at a time.
+  const pagedList = usePagedApi(paged ? endpoint : null);
+  const { data, loading, error } = useApi(paged ? null : endpoint);
   const { data: shops } = useApi('/api/admin/shops');
 
   // Which shop owns each record.
@@ -90,7 +95,13 @@ export default function AdminRecordsPage({ resource }) {
   return (
     <>
       <PageHeader title={title} subtitle="Every shop's records. Read only." />
-      <DataTable columns={withShop} rows={data} loading={loading} error={error} />
+      <DataTable
+        columns={withShop}
+        rows={data}
+        loading={loading}
+        error={error}
+        server={paged ? pagedList : undefined}
+      />
     </>
   );
 }

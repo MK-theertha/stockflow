@@ -148,8 +148,8 @@ describe('inventory', () => {
       .expect(201);
 
     const { body: payments } = await agent.get('/api/user/payment').expect(200);
-    assert.equal(payments[0].total_amount, 250, '3 × 100 − 50 discount');
-    assert.equal(payments[0].due_amount, 250);
+    assert.equal(payments.rows[0].total_amount, 250, '3 × 100 − 50 discount');
+    assert.equal(payments.rows[0].due_amount, 250);
   });
 
   it('reverses stock when an approved purchase is deleted', async () => {
@@ -187,7 +187,7 @@ describe('inventory', () => {
     assert.match(body.err, /already been sold/);
     assert.equal(await quantityOf(agent, product), 6);
     const { body: purchases } = await agent.get('/api/user/purchases').expect(200);
-    assert.equal(purchases.length, 1, 'the purchase is kept');
+    assert.equal(purchases.total, 1, 'the purchase is kept');
   });
 
   it('returns stock when an approved invoice is deleted', async () => {

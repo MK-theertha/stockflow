@@ -18,7 +18,8 @@ import {
 import { Search } from '@mui/icons-material';
 
 /**
- * Table with search and pagination done in the browser.
+ * Table with search and pagination. By default both happen in the browser on `rows`.
+ * Pass server={usePagedApi(...)} for long lists, where the server does them instead.
  * Pass paginated={false} to show every row, e.g. for a report that will be printed.
  *
  * columns: [{ label, render: (row) => node, search?: (row) => string, align? }]
@@ -34,22 +35,33 @@ export default function DataTable({
   searchable = true,
   paginated = true,
   footer,
+  server,
   rowKey = (row) => row._id,
 }) {
-  const [query, setQuery] = useState('');
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [localQuery, setLocalQuery] = useState('');
+  const [localPage, setLocalPage] = useState(0);
+  const [localLimit, setLocalLimit] = useState(10);
+
+  const query = server ? server.search : localQuery;
+  const page = server ? server.page : localPage;
+  const rowsPerPage = server ? server.limit : localLimit;
+  const setQuery = server ? server.setSearch : setLocalQuery;
+  const setPage = server ? server.setPage : setLocalPage;
+  const setRowsPerPage = server ? server.setLimit : setLocalLimit;
+  const isLoading = server ? server.loading : loading;
+  const errorText = server ? server.error : error;
 
   const filtered = useMemo(() => {
-    const needle = query.trim().toLowerCase();
+    if (server) return server.rows;
+    const needle = localQuery.trim().toLowerCase();
     if (!needle) return rows ?? [];
     return (rows ?? []).filter((row) =>
       columns.some((column) => column.search?.(row)?.toLowerCase().includes(needle))
     );
-  }, [rows, columns, query]);
+  }, [server, rows, columns, localQuery]);
 
   const offset = paginated ? page * rowsPerPage : 0;
-  const visible = paginated ? filtered.slice(offset, offset + rowsPerPage) : filtered;
+  const visible = paginated && !server ? filtered.slice(offset, offset + rowsPerPage) : filtered;
 
   return (
     <Paper variant="outlined">
@@ -60,7 +72,7 @@ export default function DataTable({
             value={query}
             onChange={(event) => {
               setQuery(event.target.value);
-              setPage(0);
+              if (!server) setPage(0);
             }}
             InputProps={{
               startAdornment: (
@@ -73,7 +85,7 @@ export default function DataTable({
         </Box>
       )}
 
-      {error && <Alert severity="error">{error}</Alert>}
+      {errorText && <Alert severity="error">{errorText}</Alert>}
 
       <TableContainer>
         <Table size="small">
@@ -88,21 +100,21 @@ export default function DataTable({
             </TableRow>
           </TableHead>
           <TableBody>
-            {loading && (
+            {isLoading && (
               <TableRow>
                 <TableCell colSpan={columns.length + 1} align="center" sx={{ py: 4 }}>
                   <CircularProgress size={28} />
                 </TableCell>
               </TableRow>
             )}
-            {!loading && visible.length === 0 && (
+            {!isLoading && visible.length === 0 && (
               <TableRow>
                 <TableCell colSpan={columns.length + 1} align="center" sx={{ py: 4 }}>
                   {emptyText}
                 </TableCell>
               </TableRow>
             )}
-            {!loading &&
+            {!isLoading &&
               visible.map((row, index) => (
                 <TableRow key={rowKey(row)} hover>
                   <TableCell>{offset + index + 1}</TableCell>
@@ -114,7 +126,7 @@ export default function DataTable({
                 </TableRow>
               ))}
           </TableBody>
-          {footer && !loading && visible.length > 0 && <TableFooter>{footer}</TableFooter>}
+          {footer && !isLoading && visible.length > 0 && <TableFooter>{footer}</TableFooter>}
         </Table>
       </TableContainer>
 
@@ -122,7 +134,7 @@ export default function DataTable({
         <TablePagination
           className="no-print"
           component="div"
-          count={filtered.length}
+          count={server ? server.total : filtered.length}
           page={page}
           rowsPerPage={rowsPerPage}
           rowsPerPageOptions={[10, 25, 50]}

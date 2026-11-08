@@ -119,6 +119,8 @@ router.post(
         total_amount: grandTotal,
         paid_amount: paid,
         due_amount: due,
+        invoice_date: input.date,
+        approved: false,
       });
       await PaymentDetail.create({
         userId,

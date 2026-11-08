@@ -30,8 +30,9 @@ export const USER_ROUTES = [
   { index: true, Component: page(() => import('@/features/dashboard/DashboardPage')) },
 
   // Sales
-  { path: 'invoices', element: <InvoiceListPage /> },
-  { path: 'invoices/pending', element: <InvoiceListPage initialFilter="pending" /> },
+  // The keys stop React reusing one page's state (filter, search) for the other.
+  { path: 'invoices', element: <InvoiceListPage key="all" /> },
+  { path: 'invoices/pending', element: <InvoiceListPage key="pending" initialFilter="pending" /> },
   { path: 'invoices/new', Component: page(() => import('@/features/sales/CreateInvoicePage')) },
   { path: 'invoices/:id', Component: page(() => import('@/features/sales/InvoiceDetailPage')) },
   {
@@ -89,7 +90,7 @@ export const ADMIN_ROUTES = [
   { path: 'shops', Component: page(() => import('@/features/admin/ShopsPage')) },
   ...['products', 'purchases', 'invoices', 'suppliers', 'categories', 'units'].map((resource) => ({
     path: resource,
-    element: <AdminRecordsPage resource={resource} />,
+    element: <AdminRecordsPage key={resource} resource={resource} />,
   })),
   ...ACCOUNT_ROUTES,
 ];

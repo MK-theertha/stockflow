@@ -141,3 +141,11 @@ export const expenseSchema = z.object({
   paidTo: z.string().trim().max(100).optional(),
   note: z.string().trim().max(500).optional(),
 });
+
+// ?page=&limit=&q=&status= on the paginated lists.
+export const listQuerySchema = z.object({
+  page: z.coerce.number().int().min(0).default(0),
+  limit: z.coerce.number().int().min(1).max(100).default(25),
+  q: z.string().trim().max(100).optional(),
+  status: z.enum(['pending', 'approved']).optional(),
+});

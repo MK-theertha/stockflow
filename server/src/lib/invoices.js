@@ -60,5 +60,7 @@ export async function approveInvoice(filter) {
     throw err;
   }
 
+  // Keep the copy on the payment in sync (see models/payment.js).
+  await Payment.updateOne({ invoice_id: invoice._id }, { approved: true });
   return invoice;
 }

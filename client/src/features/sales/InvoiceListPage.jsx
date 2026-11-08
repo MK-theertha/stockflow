@@ -7,17 +7,11 @@ import ConfirmDialog from '@/components/common/ConfirmDialog';
 import DataTable from '@/components/common/DataTable';
 import { useNotify } from '@/components/common/Notifications';
 import PageHeader from '@/components/common/PageHeader';
-import { useApi } from '@/hooks/useApi';
+import { usePagedApi } from '@/hooks/usePagedApi';
 import { apiFetch } from '@/lib/api-client';
 import { formatDate, formatMoney } from '@/lib/format';
 
 import { PAYMENT_STATUS, approvalStatus } from './status';
-
-const FILTERS = {
-  all: () => true,
-  pending: (payment) => !payment.invoice_id?.status,
-  approved: (payment) => payment.invoice_id?.status,
-};
 
 /**
  * Every invoice, one row per invoice (the payment record carries the totals).
@@ -26,18 +20,20 @@ const FILTERS = {
 export default function InvoiceListPage({ initialFilter = 'all' }) {
   const navigate = useNavigate();
   const notify = useNotify();
-  const { data, loading, error, reload } = useApi('/api/user/payment');
   const [filter, setFilter] = useState(initialFilter);
+  const list = usePagedApi('/api/user/payment', {
+    status: filter === 'all' ? undefined : filter,
+  });
   const [deleting, setDeleting] = useState(null);
 
-  const open = (payment) => navigate(`/dashboard/user/invoices/${payment.invoice_id._id}`);
+  const open = (payment) => navigate(`/dashboard/user/invoices/${payment.invoice_id?._id}`);
 
   const handleDelete = async () => {
     try {
-      await apiFetch(`/api/user/invoice/${deleting.invoice_id._id}`, { method: 'DELETE' });
+      await apiFetch(`/api/user/invoice/${deleting.invoice_id?._id}`, { method: 'DELETE' });
       notify.success('Invoice deleted');
       setDeleting(null);
-      reload();
+      list.reload();
     } catch (deleteError) {
       notify.error(deleteError.message);
     }
@@ -81,9 +77,6 @@ export default function InvoiceListPage({ initialFilter = 'all' }) {
     },
   ];
 
-  // Payments whose invoice is missing (old, half-deleted data) are skipped.
-  const rows = (data ?? []).filter((payment) => payment.invoice_id).filter(FILTERS[filter]);
-
   return (
     <>
       <PageHeader
@@ -109,9 +102,7 @@ export default function InvoiceListPage({ initialFilter = 'all' }) {
 
       <DataTable
         columns={columns}
-        rows={rows}
-        loading={loading}
-        error={error}
+        server={list}
         emptyText={filter === 'pending' ? 'Nothing waiting for approval.' : 'No invoices yet.'}
       />
 

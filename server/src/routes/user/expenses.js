@@ -8,7 +8,7 @@ const router = Router();
 
 router.get(
   '/',
-  route(async ({ user }) => json(await Expense.find(ownedBy(user)).sort({ date: -1 })))
+  route(async ({ user }) => json(await Expense.find(ownedBy(user)).sort({ date: -1 }).lean()))
 );
 
 router.post(

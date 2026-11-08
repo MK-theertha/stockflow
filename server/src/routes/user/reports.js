@@ -47,8 +47,10 @@ router.get(
   '/stockreport',
   route(async ({ user }) => {
     const products = await Product.find(ownedBy(user))
-      .populate('categoryNameId')
-      .sort({ createdAt: -1 });
+      .select('productName quantity reorderLevel categoryNameId')
+      .populate('categoryNameId', 'name')
+      .sort({ createdAt: -1 })
+      .lean();
     return json(products);
   })
 );

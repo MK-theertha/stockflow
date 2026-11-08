@@ -92,6 +92,22 @@ export const ownedMatch = (user, filter = {}) =>
     ? filter
     : { ...filter, userId: new mongoose.Types.ObjectId(String(user._id)) };
 
+/** A case-insensitive "contains" match for user text. Escaped, so it is never run as a pattern. */
+export const containsText = (text) => new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+
+/** Runs a query for one page. Every paginated list returns { rows, total, page, limit }. */
+export async function findPage(Model, filter, { page, limit }, buildQuery = (query) => query) {
+  const [rows, total] = await Promise.all([
+    buildQuery(Model.find(filter))
+      .sort({ createdAt: -1 })
+      .skip(page * limit)
+      .limit(limit)
+      .lean(),
+    Model.countDocuments(filter),
+  ]);
+  return { rows, total, page, limit };
+}
+
 /** Rounds money to 2 decimal places so totals never show floating point noise. */
 export const roundMoney = (value) => Math.round(value * 100) / 100;
 

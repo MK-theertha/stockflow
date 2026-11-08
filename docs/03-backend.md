@@ -146,6 +146,31 @@ handler reports an error instead of overselling. The same pattern guards purchas
 MongoDB transactions would be the other option, but they need a replica set; this approach
 works on a plain local MongoDB too.
 
+## Performance
+
+Measured with one shop holding 20,000 invoices among 21 shops:
+
+| Technique                                                                    | Where                      | Effect                                                                         |
+| ---------------------------------------------------------------------------- | -------------------------- | ------------------------------------------------------------------------------ |
+| **Pagination** with `findPage()`                                             | invoice and purchase lists | `/payment` went from 14 MB to about 4 KB per page                              |
+| **Fetch only what is shown**: `populate('customer_id', 'name')`, `.select()` | lists                      | Responses stop carrying whole linked records                                   |
+| **`.lean()`** on read-only queries                                           | lists                      | Plain objects, skipping the cost of building Mongoose documents                |
+| **Compound indexes** such as `{ userId, createdAt }`                         | `models/`                  | Filter and sort are served by the index, without scanning or sorting in memory |
+| **`$nin` on pending invoices** rather than a `$lookup` per row               | dashboard, receivables     | Pending invoices are few, so the exclusion list stays short                    |
+| **gzip** with `compression()`                                                | `app.js`                   | Smaller JSON and JavaScript on the wire                                        |
+
+Choosing an index: put equality fields first, then the sort or range field. For
+`find({ userId, status }).sort({ date: -1 })` that means `{ userId: 1, status: 1, date: -1 }`.
+Each index also slows writes slightly and uses memory, so add them for real queries only.
+MongoDB builds new indexes when the server starts.
+
+To see what a query does, use `explain`:
+
+```js
+await Payment.find({ userId }).sort({ createdAt: -1 }).limit(10).explain('executionStats');
+// Look for IXSCAN (good) vs COLLSCAN (full scan), and totalDocsExamined vs nReturned.
+```
+
 ## Logging
 
 - `morgan` logs one line per request.

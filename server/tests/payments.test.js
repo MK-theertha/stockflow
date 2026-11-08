@@ -78,9 +78,9 @@ describe('receivables', () => {
     const { body: before } = await agent.get('/api/user/creditcustomer').expect(200);
     assert.equal(before.length, 0, 'a pending invoice is not money owed yet');
 
-    const { body: payments } = await agent.get('/api/user/payment').expect(200);
+    const { body: list } = await agent.get('/api/user/payment').expect(200);
     const { body } = await agent
-      .post(`/api/user/payment/${payments[0]._id}/collect`)
+      .post(`/api/user/payment/${list.rows[0]._id}/collect`)
       .send({ amount: 10 })
       .expect(400);
     assert.match(body.err, /Approve the invoice/);

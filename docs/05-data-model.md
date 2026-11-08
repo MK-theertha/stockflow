@@ -122,5 +122,10 @@ Renaming them would need a data migration; it is listed in [next steps](11-next-
 - `invoice_id` on detail, payment and payment-detail collections; `product_id` and
   `reference` on stock movements.
 
+- Compound indexes match the common lists and reports, such as `payments (userId, createdAt)`,
+  `invoices (userId, status, date)`, `purchases (userId, status, date)`,
+  `expenses (userId, date)` and `stockmovements (userId, createdAt)`. See
+  [Performance](03-backend.md#performance).
+
 `server/scripts/migrate-assign-owner.mjs` upgrades a database created before records had
 owners (see the main README).

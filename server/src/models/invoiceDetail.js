@@ -19,5 +19,7 @@ const InvoiceDetailSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+InvoiceDetailSchema.index({ userId: 1, invoice_id: 1 });
+
 // The model name stays 'Invoicedetails' so the existing collection is reused.
 export default mongoose.model('Invoicedetails', InvoiceDetailSchema);

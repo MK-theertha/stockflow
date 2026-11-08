@@ -13,6 +13,17 @@ All endpoints take and return JSON. Errors always look like `{ "err": "message" 
 Unless noted, list endpoints return an array sorted newest first, and `:id` must be a valid
 MongoDB ObjectId (400 otherwise).
 
+## Paginated lists
+
+Long lists return one page at a time, so the browser never downloads a whole collection:
+
+```
+GET /api/user/payment?page=0&limit=25&q=ravi&status=pending
+→ { "rows": [...], "total": 1, "page": 0, "limit": 25 }
+```
+
+`page` starts at 0 (default 0), `limit` is 1–100 (default 25), and invalid values return 400.
+
 ## Auth and account
 
 | Method | Path                        | Access | Body / notes                                                                  |
@@ -63,7 +74,7 @@ These six resources share the same shape:
 
 | Method | Path                      | Access | Notes                                                                                                                                                                                                                                                                  |
 | ------ | ------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET    | `/api/user/purchases`     | shop   | Populated with supplier, category, product.                                                                                                                                                                                                                            |
+| GET    | `/api/user/purchases`     | shop   | **Paginated.** `?status=pending\|approved` filters; `?q=` searches number, product and supplier. Includes supplier and product names.                                                                                                                                  |
 | POST   | `/api/user/purchases`     | shop   | Array of `{ purchaseNo, supplierName, selectedProduct, startDate, quantity, unitPrice, selectedCategory?, description? }`. Product and supplier must belong to the shop. The total is computed on the server; the category defaults to the product's. Created pending. |
 | PUT    | `/api/user/purchases/:id` | shop   | **Approve**: adds stock, writes a ledger row. 400 if already approved.                                                                                                                                                                                                 |
 | DELETE | `/api/user/purchases/:id` | shop   | Delete. If approved, the stock is taken back out with a `reversal` ledger row; 400 if that stock has already been sold.                                                                                                                                                |
@@ -80,13 +91,13 @@ These six resources share the same shape:
 
 ## Payments and receivables
 
-| Method | Path                            | Access | Notes                                                                             |
-| ------ | ------------------------------- | ------ | --------------------------------------------------------------------------------- |
-| GET    | `/api/user/payment`             | shop   | One payment per invoice, with invoice and customer. Used for the invoice lists.   |
-| GET    | `/api/user/creditcustomer`      | shop   | Receivables: **approved** invoices with money due.                                |
-| GET    | `/api/user/paidcustomer`        | shop   | Approved invoices paid in full.                                                   |
-| POST   | `/api/user/payment/:id/collect` | shop   | `{ amount, date? }`. 400 if more than due, or if the invoice is not approved yet. |
-| GET    | `/api/user/payment/:id/history` | shop   | Every amount received for that invoice, oldest first.                             |
+| Method | Path                            | Access | Notes                                                                                                                                                    |
+| ------ | ------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/user/payment`             | shop   | **Paginated.** One payment per invoice, with invoice and customer. `?status=pending\|approved` filters; `?q=` searches invoice number and customer name. |
+| GET    | `/api/user/creditcustomer`      | shop   | Receivables: **approved** invoices with money due.                                                                                                       |
+| GET    | `/api/user/paidcustomer`        | shop   | **Paginated.** Approved invoices paid in full. `?q=` searches.                                                                                           |
+| POST   | `/api/user/payment/:id/collect` | shop   | `{ amount, date? }`. 400 if more than due, or if the invoice is not approved yet.                                                                        |
+| GET    | `/api/user/payment/:id/history` | shop   | Every amount received for that invoice, oldest first.                                                                                                    |
 
 ## Inventory
 

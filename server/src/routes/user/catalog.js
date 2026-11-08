@@ -12,54 +12,16 @@ import { PRODUCT_REFS } from '../../models/product.js';
 
 const router = Router();
 
-// Categories and units only have a name, so they share the same handlers.
-for (const [path, Model, label] of [
-  ['/category', Category, 'Category'],
-  ['/unit', Unit, 'Unit'],
-]) {
-  router.get(
-    path,
-    route(async ({ user }) => json(await Model.find(ownedBy(user)).sort({ createdAt: -1 })))
-  );
-
-  router.post(
-    path,
-    route(async ({ body, user }) => {
-      const { name } = namedSchema.parse(body);
-      return json(await Model.create({ name, userId: user._id }), 201);
-    })
-  );
-
-  router.put(
-    `${path}/:id`,
-    route(async ({ body, params, user }) => {
-      const { name } = namedSchema.parse(body);
-      const doc = await Model.findOneAndUpdate(
-        ownedBy(user, { _id: assertObjectId(params.id) }),
-        { name },
-        { new: true, runValidators: true }
-      );
-      return json(found(doc, label));
-    })
-  );
-
-  router.delete(
-    `${path}/:id`,
-    route(async ({ params, user }) => {
-      const doc = await Model.findOneAndDelete(ownedBy(user, { _id: assertObjectId(params.id) }));
-      return json(found(doc, label));
-    })
-  );
-}
-
-// Customers and suppliers are validated by their own schema.
+// Categories, units, customers and suppliers all follow the same CRUD shape.
 for (const [path, Model, schema, label] of [
+  ['/category', Category, namedSchema, 'Category'],
+  ['/unit', Unit, namedSchema, 'Unit'],
   ['/customers', Customer, customerSchema, 'Customer'],
   ['/supplier', Supplier, supplierSchema, 'Supplier'],
 ]) {
   router.get(
     path,
-    route(async ({ user }) => json(await Model.find(ownedBy(user)).sort({ createdAt: -1 })))
+    route(async ({ user }) => json(await Model.find(ownedBy(user)).sort({ createdAt: -1 }).lean()))
   );
 
   router.post(
@@ -97,7 +59,8 @@ router.get(
   route(async ({ user }) => {
     const products = await Product.find(ownedBy(user))
       .populate(PRODUCT_REFS)
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
     return json(products);
   })
 );

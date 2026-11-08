@@ -1,3 +1,4 @@
+import { Suspense, lazy } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import {
   Alert,
@@ -22,14 +23,15 @@ import {
 
 import PageHeader from '@/components/common/PageHeader';
 import StatCard from '@/components/common/StatCard';
-import AiAssistant from '@/features/ai/AiAssistant';
 import { useApi } from '@/hooks/useApi';
 import { formatDate, formatMoney } from '@/lib/format';
 import { useSession } from '@/lib/session';
 
 import { PAYMENT_STATUS } from '@/features/sales/status';
 
-import SalesTrendChart from './SalesTrendChart';
+// Chart.js and the markdown renderer are large, so they load separately from the page.
+const SalesTrendChart = lazy(() => import('./SalesTrendChart'));
+const AiAssistant = lazy(() => import('@/features/ai/AiAssistant'));
 
 function Panel({ title, action, children }) {
   return (
@@ -116,7 +118,9 @@ export default function DashboardPage({ children }) {
         <Grid item xs={12} lg={8}>
           <Panel title="Sales, last 6 months">
             <Box sx={{ height: 280 }}>
-              <SalesTrendChart trend={salesTrend} />
+              <Suspense fallback={<CircularProgress size={24} />}>
+                <SalesTrendChart trend={salesTrend} />
+              </Suspense>
             </Box>
           </Panel>
         </Grid>
@@ -212,7 +216,9 @@ export default function DashboardPage({ children }) {
       {children}
 
       <Panel title="Ask the AI assistant">
-        <AiAssistant />
+        <Suspense fallback={<CircularProgress size={24} />}>
+          <AiAssistant />
+        </Suspense>
       </Panel>
     </>
   );

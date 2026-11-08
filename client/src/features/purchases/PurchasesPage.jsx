@@ -8,7 +8,7 @@ import DataTable from '@/components/common/DataTable';
 import { useNotify } from '@/components/common/Notifications';
 import PageHeader from '@/components/common/PageHeader';
 import { approvalStatus } from '@/features/sales/status';
-import { useApi } from '@/hooks/useApi';
+import { usePagedApi } from '@/hooks/usePagedApi';
 import { apiFetch } from '@/lib/api-client';
 import { formatDate, formatMoney } from '@/lib/format';
 import { fetchProducts } from '@/store/slices/productSlice';
@@ -16,20 +16,16 @@ import { fetchSuppliers } from '@/store/slices/supplierSlice';
 
 import NewPurchaseDialog from './NewPurchaseDialog';
 
-const FILTERS = {
-  all: () => true,
-  pending: (purchase) => !purchase.status,
-  approved: (purchase) => purchase.status,
-};
-
 /** Goods bought from suppliers. Approving a purchase adds its quantity to stock. */
 export default function PurchasesPage() {
   const dispatch = useDispatch();
   const notify = useNotify();
   const { products } = useSelector((state) => state.products);
   const { suppliers } = useSelector((state) => state.suppliers);
-  const { data, loading, error, reload } = useApi('/api/user/purchases');
   const [filter, setFilter] = useState('all');
+  const list = usePagedApi('/api/user/purchases', {
+    status: filter === 'all' ? undefined : filter,
+  });
   const [adding, setAdding] = useState(false);
   const [deleting, setDeleting] = useState(null);
 
@@ -40,7 +36,7 @@ export default function PurchasesPage() {
 
   // Every change here affects stock, so refresh the product list as well.
   const refresh = () => {
-    reload();
+    list.reload();
     dispatch(fetchProducts());
   };
 
@@ -120,9 +116,7 @@ export default function PurchasesPage() {
 
       <DataTable
         columns={columns}
-        rows={(data ?? []).filter(FILTERS[filter])}
-        loading={loading}
-        error={error}
+        server={list}
         emptyText='No purchases yet. Click "New purchase" to record one.'
       />
 

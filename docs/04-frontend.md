@@ -70,6 +70,20 @@ const { data, loading, error, reload } = useApi('/api/user/stock/low');
 Use it for data only one page needs (reports, the dashboard, the stock ledger). Call
 `reload()` after changing something.
 
+### `usePagedApi()` – long lists
+
+```js
+const list = usePagedApi('/api/user/payment', { status: 'pending' });
+return <DataTable columns={columns} server={list} />;
+```
+
+The server does the paging and searching, and typing in the search box waits for a short
+pause before sending a request. Use it for transactions that keep growing (invoices,
+purchases). `useApi` plus the browser-side paging in `DataTable` is fine for short lists.
+
+`useApi` also ignores out-of-date responses: if you switch filter quickly, a slow old
+response can never overwrite the newer one.
+
 ### Redux – shared master data
 
 Master data (products, categories, units, suppliers, customers, expenses) lives in Redux
@@ -141,6 +155,20 @@ The old version of this page was 400 lines.
 | `print.js`   | `printElement(ref.current)` prints one part of the page               |
 | `uploads.js` | `uploadImage(file)` uploads to Cloudinary and returns the URL         |
 | `format.js`  | `toInputDate(date)` → `2026-11-05` in local time, for date inputs     |
+
+## Keeping the download small
+
+- Each page is a separate file loaded on demand (`React.lazy`), and so are Chart.js and the
+  AI assistant's markdown renderer.
+- React lives in its own chunk (`vite.config.js`), which stays cached between releases.
+- Express gzips responses and caches `assets/*` for a year. That is safe because those file
+  names contain a hash of their content, so a new build gets new names.
+
+## State and route keys
+
+React keeps a component's state when the same component stays at the same place in the tree,
+even across routes. `/invoices` and `/invoices/pending` both render `InvoiceListPage`, so
+`routes.jsx` gives each a different `key`; without it, the filter would carry over.
 
 ## Public pages
 

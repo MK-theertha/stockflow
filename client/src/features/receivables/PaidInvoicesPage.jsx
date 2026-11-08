@@ -4,13 +4,13 @@ import { Visibility } from '@mui/icons-material';
 
 import DataTable from '@/components/common/DataTable';
 import PageHeader from '@/components/common/PageHeader';
-import { useApi } from '@/hooks/useApi';
+import { usePagedApi } from '@/hooks/usePagedApi';
 import { formatDate, formatMoney } from '@/lib/format';
 
 /** Approved invoices that have been paid in full. */
 export default function PaidInvoicesPage() {
   const navigate = useNavigate();
-  const { data, loading, error } = useApi('/api/user/paidcustomer');
+  const list = usePagedApi('/api/user/paidcustomer');
 
   const columns = [
     {
@@ -40,13 +40,7 @@ export default function PaidInvoicesPage() {
   return (
     <>
       <PageHeader title="Paid invoices" subtitle="Approved invoices with nothing left to pay." />
-      <DataTable
-        columns={columns}
-        rows={data}
-        loading={loading}
-        error={error}
-        emptyText="No fully paid invoices yet."
-      />
+      <DataTable columns={columns} server={list} emptyText="No fully paid invoices yet." />
     </>
   );
 }

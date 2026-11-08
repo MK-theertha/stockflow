@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
@@ -40,6 +41,9 @@ app.use(
 
 if (!config.isTest) app.use(morgan(config.isProduction ? 'combined' : 'dev'));
 
+// Gzip responses: JSON lists and the JavaScript bundle shrink by about 70-90%.
+app.use(compression());
+
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 
@@ -66,6 +70,12 @@ app.use('/api', (req, res) => {
 
 // After `npm run build`, the API also serves the React app, so one server runs everything.
 if (fs.existsSync(CLIENT_DIST)) {
+  // Files in assets/ have a content hash in their name, so browsers can keep them for a
+  // year: a new build produces new names. index.html must always be checked for updates.
+  app.use(
+    '/assets',
+    express.static(path.join(CLIENT_DIST, 'assets'), { immutable: true, maxAge: '1y' })
+  );
   app.use(express.static(CLIENT_DIST));
   app.get('*', (req, res) => res.sendFile(path.join(CLIENT_DIST, 'index.html')));
 }

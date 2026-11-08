@@ -22,5 +22,8 @@ const PurchaseSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+PurchaseSchema.index({ userId: 1, createdAt: -1 });
+PurchaseSchema.index({ userId: 1, status: 1, date: -1 });
+
 // The model name stays 'Purchases' so the existing `purchases` collection is reused.
 export default mongoose.model('Purchases', PurchaseSchema);

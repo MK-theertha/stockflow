@@ -28,4 +28,7 @@ const StockMovementSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+StockMovementSchema.index({ userId: 1, createdAt: -1 });
+StockMovementSchema.index({ product_id: 1, createdAt: -1 });
+
 export default mongoose.model('StockMovement', StockMovementSchema);

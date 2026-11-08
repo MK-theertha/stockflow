@@ -248,7 +248,7 @@ const RegisterPage = () => {
           >
             <Box
               component="img"
-              src="/images/pic3.png"
+              src="/images/pic3.jpg"
               alt="Register image"
               sx={{
                 width: '100%',

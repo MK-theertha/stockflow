@@ -16,8 +16,19 @@ const PaymentSchema = new mongoose.Schema(
     due_amount: { type: Number },
     total_amount: { type: Number },
     discount_amount: { type: Number },
+    // Copies of the invoice's date and approval status (denormalised), so sales can be
+    // summed from payments alone without a $lookup. Kept in sync by invoice creation and
+    // approveInvoice(); older records are filled in at startup by lib/backfill.js.
+    invoice_date: { type: Date },
+    approved: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
+
+PaymentSchema.index({ userId: 1, createdAt: -1 });
+PaymentSchema.index({ userId: 1, due_amount: 1 });
+PaymentSchema.index({ userId: 1, paid_status: 1, createdAt: -1 });
+PaymentSchema.index({ customer_id: 1 });
+PaymentSchema.index({ userId: 1, approved: 1, invoice_date: -1 });
 
 export default mongoose.model('Payment', PaymentSchema);

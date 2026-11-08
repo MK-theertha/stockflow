@@ -3,6 +3,8 @@ import { Router } from 'express';
 import {
   HttpError,
   assertObjectId,
+  containsText,
+  findPage,
   found,
   json,
   ownedBy,
@@ -10,18 +12,39 @@ import {
   route,
 } from '../../lib/api.js';
 import { changeStock } from '../../lib/stock.js';
-import { purchaseListSchema } from '../../lib/validators.js';
+import { listQuerySchema, purchaseListSchema } from '../../lib/validators.js';
 import { Product, Purchase, Supplier } from '../../models/index.js';
 
 const router = Router();
 
+// Matches the purchase number, the product name or the supplier name.
+const purchaseSearch = async (user, q) => {
+  const text = containsText(q);
+  const [products, suppliers] = await Promise.all([
+    Product.find(ownedBy(user, { productName: text })).distinct('_id'),
+    Supplier.find(ownedBy(user, { name: text })).distinct('_id'),
+  ]);
+  return {
+    $or: [
+      { purchase_no: text },
+      { product_id: { $in: products } },
+      { supplier_id: { $in: suppliers } },
+    ],
+  };
+};
+
+// ?status=pending|approved filters the list and ?q= searches it.
 router.get(
   '/',
-  route(async ({ user }) => {
-    const purchases = await Purchase.find(ownedBy(user))
-      .populate(['supplier_id', 'category_id', 'product_id'])
-      .sort({ createdAt: -1 });
-    return json(purchases);
+  route(async ({ req, user }) => {
+    const { status, q, ...paging } = listQuerySchema.parse(req.query);
+    const filter = ownedBy(user, q ? await purchaseSearch(user, q) : {});
+    if (status) filter.status = status === 'approved';
+
+    const page = await findPage(Purchase, filter, paging, (query) =>
+      query.populate('supplier_id', 'name').populate('product_id', 'productName')
+    );
+    return json(page);
   })
 );
 

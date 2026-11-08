@@ -21,8 +21,11 @@ something new. Use the [tutorial](10-adding-a-feature.md) checklist for each.
 
 ## Making the existing code better
 
-- **Server-side pagination and search** for large lists (`?page=&limit=&q=`), instead of
-  loading everything into the browser.
+- **Paginate the remaining lists** (products, customers, expenses, receivables). Invoices and
+  purchases already use `findPage()` and `usePagedApi()`.
+- **Store the invoice date and approval status on `Payment`** (denormalisation), so dashboard
+  sales need no `$lookup`. This is the slowest remaining query; the trade-off is keeping two
+  copies in sync.
 - **Restyle the public pages** (home, login, register, pricing) with the same theme and
   components as the dashboard.
 - **Invoice editing.** Today a pending invoice can only be deleted and re-created; an edit

@@ -21,6 +21,7 @@ Tests never touch your real database.
 | `inventory.test.js` | purchase approval, invoice approval, not-enough-stock rollback, stock ledger, adjustments, low stock, shop isolation, server-computed totals, reversals on delete |
 | `payments.test.js`  | collecting payments, over-collection, pending invoices excluded, isolation, dashboard numbers                                                                     |
 | `expenses.test.js`  | expense CRUD, validation, isolation, dashboard total                                                                                                              |
+| `lists.test.js`     | pagination, status filters, search (literal text only), invalid parameters, isolation                                                                             |
 
 These focus on the rules that would cost real money if they broke: stock counts, payment
 balances, and one shop seeing another's data.

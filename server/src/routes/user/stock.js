@@ -4,6 +4,7 @@ import { HttpError, assertObjectId, found, json, ownedBy, route } from '../../li
 import { changeStock } from '../../lib/stock.js';
 import { stockAdjustmentSchema } from '../../lib/validators.js';
 import { Product, StockMovement } from '../../models/index.js';
+import { LOW_STOCK_FILTER } from '../../models/product.js';
 
 const MOVEMENT_LIMIT = 200;
 
@@ -19,7 +20,8 @@ router.get(
     const movements = await StockMovement.find(filter)
       .populate('product_id', 'productName')
       .sort({ createdAt: -1 })
-      .limit(MOVEMENT_LIMIT);
+      .limit(MOVEMENT_LIMIT)
+      .lean();
     return json(movements);
   })
 );
@@ -44,11 +46,11 @@ router.post(
 router.get(
   '/low',
   route(async ({ user }) => {
-    const products = await Product.find(
-      ownedBy(user, { reorderLevel: { $gt: 0 }, $expr: { $lte: ['$quantity', '$reorderLevel'] } })
-    )
-      .populate(['supplierNameId', 'unitNameId'])
-      .sort({ quantity: 1 });
+    const products = await Product.find(ownedBy(user, LOW_STOCK_FILTER))
+      .populate('supplierNameId', 'name')
+      .populate('unitNameId', 'name')
+      .sort({ quantity: 1 })
+      .lean();
     return json(products);
   })
 );
